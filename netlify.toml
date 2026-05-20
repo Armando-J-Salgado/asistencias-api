@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "JWT_SECRET,JWT_SCAN_SECRET,SUPABASE_SERVICE_ROLE_KEY,STUDENT_IMPORT_DEFAULT_PASSWORD,SMTP_PASS"
