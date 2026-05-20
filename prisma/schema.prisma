@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AssistantRole {
+  AYUDANTE
+  TUTOR
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  lastname     String
+  passwordHash String    @map("password_hash")
+  email        String    @unique
+  activeToken  String?   @map("active_token")
+  isActive     Boolean   @default(true) @map("is_active")
+  isAdmin      Boolean   @default(false) @map("is_admin")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  student               Student?
+  assistant             Assistant?
+  passwordResetTokens   PasswordResetToken[]
+  refreshTokens         RefreshToken[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Section {
+  id            String         @id @default(uuid())
+  sectionNumber Int            @unique @map("section_number")
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  groups         Group[]
+  students       Student[]
+  assistantships Assistantship[]
+
+  @@map("sections")
+}
+
+model Group {
+  id        String    @id @default(uuid())
+  name      String
+  number    Int
+  sectionId String    @map("section_id")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  section Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  students Student[]
+
+  @@unique([sectionId, number])
+  @@index([sectionId])
+  @@map("groups")
+}
+
+model Student {
+  id        String    @id @default(uuid())
+  userId    String    @unique @map("user_id")
+  sectionId String?   @map("section_id")
+  groupId   String?   @map("group_id")
+  idCard    String    @map("id_card")
+  imageUrl  String?   @map("image_url")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  section           Section?           @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  group             Group?             @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  attendanceChecks  AttendanceCheck[]
+
+  @@index([sectionId])
+  @@index([groupId])
+  @@map("students")
+}
+
+model Assistant {
+  id        String        @id @default(uuid())
+  userId    String        @unique @map("user_id")
+  role      AssistantRole
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendanceChecks  AttendanceCheck[]
+
+  @@map("assistants")
+}
+
+model Assistantship {
+  id        String    @id @default(uuid())
+  sectionId String    @map("section_id")
+  date      DateTime  @db.Date
+  startTime String    @map("start_time")
+  endTime   String    @map("end_time")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  section           Section           @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  attendanceChecks AttendanceCheck[]
+
+  @@index([sectionId])
+  @@map("assistantships")
+}
+
+model AttendanceCheck {
+  id              String    @id @default(uuid())
+  assistantshipId String    @map("assistantship_id")
+  studentId       String    @map("student_id")
+  assistantId     String?   @map("assistant_id")
+  hasAttended     Boolean   @default(false) @map("has_attended")
+  checkedDate     DateTime? @map("checked_date")
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  assistantship Assistantship @relation(fields: [assistantshipId], references: [id], onDelete: Cascade)
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assistant     Assistant?    @relation(fields: [assistantId], references: [id], onDelete: SetNull)
+
+  @@unique([assistantshipId, studentId])
+  @@index([studentId])
+  @@index([assistantshipId])
+  @@map("attendance_checks")
+}
