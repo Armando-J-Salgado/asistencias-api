@@ -3,14 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "prisma generate && nest build",
+    "build": "npm exec --yes --package=prisma prisma generate && npm exec --yes --package=@nestjs/cli nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"src/**/*.ts\"",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
-    "prisma:migrate:dev": "prisma migrate dev"
+    "prisma:generate": "npm exec --yes --package=prisma prisma generate",
+    "prisma:migrate": "npm exec --yes --package=prisma prisma migrate deploy",
+    "prisma:migrate:dev": "npm exec --yes --package=prisma prisma migrate dev"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "2.3.4",
